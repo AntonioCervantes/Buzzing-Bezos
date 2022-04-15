@@ -1,0 +1,16 @@
+{
+    "name": "Preprocessing",
+    "version": "1.0.0",
+    "description": "Preprocesses sensor data",
+    "keywords": "sensor, preprocessing",
+    "authors":
+    [
+      {
+        "name": "Christian Pedrigal",
+        "email": "pedrigalchristian@gmail.com",
+        "url": "https://www.linkedin.com/in/christianthemanpedrigal/"
+      }
+    ],
+    "frameworks": "*",
+    "platforms": "*"
+  }
