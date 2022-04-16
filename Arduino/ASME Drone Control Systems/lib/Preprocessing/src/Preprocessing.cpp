@@ -15,60 +15,48 @@ float compFilter(float signal1, float signal2, float alpha){
   return filtered_signal;
 }
 
+
+/* AVERAGER
+  This class accepts the size of the running filter for the average data.
+*/
+Averager::Averager(int size){
+  _size = size;
+  _temp = 0;
+  _index = &_temp;
+  _array[_size];
+
+}
+
 /* ROLLING MEMORY
- *  This function takes in an array of fixed size, and then continuously replaces 
- * the current index with a new data point. this creates a moving average.
- */
-float rotatingAverage(int arrSize, float *memArray, int *index, float newDataPoint){
-  memArray[*index] = newDataPoint; //assign current index the newdatapp
+*  This function returns the running averarge based on the array size
+*/
+float Averager::getRunningAverage(float newDataPoint){
+  _array[*_index] = newDataPoint; //assign current index the newdatapp
   
   // Calculate Average
   float sum = 0;
-  for(int i = 0; i < arrSize; i++) {// Sum of Array
+  for(int i = 0; i < _size; i++) {// Sum of Array
       
-      sum += memArray[i];
-      if(DEBUG){
-
-        Serial.print("i: ");
-        Serial.print(i);
-        Serial.print("\t");
-
-        Serial.print("*index: ");
-        Serial.print(*index);
-        Serial.print("\t");
-
-
-        Serial.print("Sum: ");
-        Serial.print(sum);
-        Serial.print("\t");
-
-        Serial.print("Point: ");
-        Serial.print(memArray[i]);
-        Serial.println("\t");
-      }
+      sum += _array[i];
     }
- 
-  float average = sum / arrSize;
+
+  float average = sum / _size;
   
-  if(DEBUG){
-
-    Serial.print("Average: ");
-    Serial.print(average);
-    Serial.print("\t");
-
-    Serial.print("Index*: ");
-    Serial.print(*index);
-    Serial.println("\t");
-  }
 
   //Iterate 
-  *index = *index + 1;
+  *_index = *_index + 1;
 
-  if(*index == (arrSize)){
+  //if index exceeds max size of array, go back to 0 
+  if(*_index == (_size)){
 
-    *index = 0; //if index exceeds max size of array, go back to 0 
+    *_index = 0; 
   }
+
   return average;
+}
+
+float Averager::getAveragerSize(){
+  return _size;
 }
 
 // (1) Update 1 point. (2) Average. (3) Iterate Next Point. -- *for iteration, go to beginning

@@ -10,11 +10,9 @@
 // defines variables
 long duration; // variable for the duration of sound wave travel
 int distance; // variable for the distance measurement
-
-float average_memory[ARRSIZE];
 float average;
-int temp = 0;
-int* i = &temp; // iterator pointer
+
+Averager DistanceAverager(ARRSIZE);
 
 void setup() {
     pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
@@ -42,9 +40,8 @@ void loop() {
         Serial.print(",\t");
     }
 
-    
 
-    average = rotatingAverage(ARRSIZE, average_memory, i, distance);
+    average = DistanceAverager.getRunningAverage(distance);
 
     if (MAIN_DEBUG){
         Serial.println(average);
