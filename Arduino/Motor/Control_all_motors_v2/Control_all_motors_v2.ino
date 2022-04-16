@@ -51,6 +51,7 @@ void setup ()
   //Set PCIE0 to enable PCMSK2 scan.
   PCICR |= (1 << PCIE2);
   
+  // Reciever Pins
   PCMSK2 |= (1 << PCINT16); //Set PCINT16 (Analog input A8) to trigger an interrupt on state change.
   PCMSK2 |= (1 << PCINT17); //Set PCINT17 (Analog input A9) to trigger an interrupt on state change.
   PCMSK2 |= (1 << PCINT18); //Set PCINT18 (Analog input A10) to trigger an interrupt on state change.
