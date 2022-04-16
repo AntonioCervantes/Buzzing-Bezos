@@ -28,10 +28,11 @@ int pitch2;
 int yaw;
 int yaw2;
 int type;
+int eStop;
 
-byte last_channel_1, last_channel_2, last_channel_3, last_channel_4, last_channel_5;
-unsigned long timer_roll, timer_channel_2, timer_channel_3, timer_channel_4, timer_channel_5;
-unsigned long timer_1, timer_2, timer_3, timer_4, timer_5, current_time;
+byte last_channel_1, last_channel_2, last_channel_3, last_channel_4, last_channel_5, last_channel_6;
+unsigned long timer_roll, timer_channel_2, timer_channel_3, timer_channel_4, timer_channel_5, timer_channel_6;
+unsigned long timer_1, timer_2, timer_3, timer_4, timer_5, timer_6, current_time;
 
 
 void setup ()
@@ -57,6 +58,7 @@ void setup ()
   PCMSK2 |= (1 << PCINT18); //Set PCINT18 (Analog input A10) to trigger an interrupt on state change.
   PCMSK2 |= (1 << PCINT19); //Set PCINT19 (Analog input A11) to trigger an interrupt on state change.
   PCMSK2 |= (1 << PCINT20); //Set PCINT20 (Analog input A12) to trigger an interrupt on state change.
+  PCMSK2 |= (1 << PCINT21); //Set PCINT20 (Analog input A13) to trigger an interrupt on state change.
 
   Serial.begin(9600);
 }
@@ -67,11 +69,15 @@ void loop ()
   
 
   // Motor Mixing Algorithm  TODO: Add PID inputs to this
-  motor1 = throttle + yaw + pitch + roll-270;
-  motor2 = throttle - yaw + pitch - roll+90+22;
-  motor3 = throttle - yaw - pitch + roll+90+22;
-  motor4 = throttle + yaw - pitch - roll+90+22;
-
+  if(eStop < 1500) {
+    motor1 = throttle + yaw + pitch + roll-270;
+    motor2 = throttle - yaw + pitch - roll+90+22;
+    motor3 = throttle - yaw - pitch + roll+90+22;
+    motor4 = throttle + yaw - pitch - roll+90+22;
+  }
+  else {
+    motor1=motor2=motor3=motor4=0;
+  }
   // Scale values to write to ESC
   //m1 = map(motor1, 0, 2000, 0, 180);
   //m2 = map(motor2, 0, 2000, 0, 180);
@@ -110,7 +116,10 @@ void loop ()
   Serial.print(yaw);
   Serial.print(" - ");
   Serial.print("type = ");
-  Serial.println(type);*/
+  Serial.print(type);
+  Serial.print(" - ");
+  Serial.print("eStop = ");
+  Serial.println(eStop);*/
   
   // debug motor mixing
   Serial.print("Motor 1 = ");
@@ -243,6 +252,21 @@ ISR(PCINT2_vect)
   {
       last_channel_5 = 0;
       type = current_time - timer_5;
+  }
+
+  //Channel 6=========================================
+  if(PINK & B00100000)
+  {
+    if(last_channel_6 == 0)
+    {
+      last_channel_6 = 1;
+      timer_6 = current_time;        
+    }    
+  }
+  else if(last_channel_6 == 1)
+  {
+      last_channel_6 = 0;
+      eStop = current_time - timer_6;
   }
  
 }
