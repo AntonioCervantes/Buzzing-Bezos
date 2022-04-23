@@ -1,24 +1,79 @@
-
 #include <Arduino.h>
-//mpu
-#include "MPU9250.h"
-MPU9250 mpu;
-
-//barometer
 #include <Wire.h>
-#include <MS5x.h>
-MS5x barometer(&Wire);
-uint32_t prevTime;
-double prevPressure=0;
-double prevTemperature=0;
-double seaLevelPressure = 0;
-
-//gps
-#include <SparkFun_u-blox_GNSS_Arduino_Library.h>
-SFE_UBLOX_GNSS myGNSS;
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(10, 11);
-long lastTime = 0;
+
+// Include libraries
+#include "MS5x.h" // barometer
+#include "MPU9250.h" // mpu
+#include "SparkFun_u-blox_GNSS_Arduino_Library.h" // GPS
+#include "Preprocessing.h"
+#include "PID_v1.h"
+
+// Global Constants
+#define ARRSIZE 20
+#define MAIN_DEBUG 1
+
+// Initialize Sensors
+MS5x barometer(&Wire); // barometer
+MPU9250 mpu; // mpu
+SFE_UBLOX_GNSS myGNSS; SoftwareSerial mySerial(10, 11); // gps
+
+// Initialize sensory data
+double pressure = 0;
+double temperature = 0;
+double altitude = 0;
+
+// Initialize Averagers
+Averager AltitudeAverager(ARRSIZE);
+Averager YawAverager(ARRSIZE);
+Averager PitchAverager(ARRSIZE);
+Averager RollAverager(ARRSIZE);
+
+// define Gain Struct
+struct PID_Controls{
+
+    float ref;
+
+    int Ki;
+    int Kp;
+    int Kd;
+
+    double Setpoint;
+    double Input;
+    double Output;
+};
+
+// Initialize Gains
+struct PID_Controls yaw;
+struct PID_Controls roll;
+struct PID_Controls pitch;
+struct PID_Controls alt;
+
+void PreProcessData(){
+    yaw.ref = YawAverager.getRunningAverage(mpu.getYaw());
+    pitch.ref = PitchAverager.getRunningAverage(mpu.getPitch());
+    roll.ref = RollAverager.getRunningAverage(mpu.getRoll());
+    alt.ref = compFilter(barometer.getAltitude(true), myGNSS.getAltitude()*(1000), 0.90);
+}
+
+void setupDecoupledPID(){
+    PID yawPID(&(yaw.Setpoint), &(yaw.Output), &(yaw.Setpoint), yaw.Ki, yaw.Kp, yaw.Kd, DIRECT);
+    PID rollPID(&(roll.Setpoint), &(roll.Output), &(roll.Setpoint), roll.Ki, roll.Kp, roll.Kd, DIRECT);
+    PID pitchPID(&(pitch.Setpoint), &(pitch.Output), &(pitch.Setpoint), pitch.Ki, pitch.Kp, pitch.Kd, DIRECT);
+    PID myPID(&(alt.Setpoint), &(alt.Output), &(alt.Setpoint), alt.Ki, alt.Kp, alt.Kd, DIRECT);
+}
+
+void setupCoupledPID(){
+    // Perform body to world conversion
+
+    // Introduce yaw reference point
+
+    // Add two more PID Controllers for Roll and Pitch 
+}
+
+void Motor(){
+
+};
 
 void print_gps_mpu_barometer() {
     Serial.print(mpu.getYaw());
@@ -47,8 +102,7 @@ void print_gps_mpu_barometer() {
     Serial.println();
 }
 
-
-void setup() {
+void setup(){
     Serial.begin(115200);
     Wire.begin();
     delay(2000);
@@ -89,12 +143,8 @@ void setup() {
     barometer.setDelay(1000);
 }
 
+void loop(){
 
-void loop() {
-
-    double pressure = 0;
-    double temperature = 0;
-    double altitude = 0;
     barometer.checkUpdates();
     
     if (mpu.update() && barometer.isReady()) {
@@ -102,9 +152,11 @@ void loop() {
         temperature = barometer.GetTemp(); // Returns temperature in C
         pressure = barometer.GetPres(); // Returns pressure in Pascals
         if (millis() > prev_ms + 43) {
-            print_gps_mpu_barometer()
+            PreProcessData();
+            setupDecoupledPID();
+        
+
             prev_ms = millis();
         }
-    }    
+    }  
 }
-
